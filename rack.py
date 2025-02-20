@@ -3,8 +3,8 @@ import shapely.geometry as shp
 from shapely.ops import unary_union
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
+from global_functions import add_logs
 from modelos_math import longitudes_lados,offset_abierto,angulos,generar_offset
-
 
 def ajustar_puntos(x, y, nuevos_puntos):
     interpolacion = interp1d(np.arange(len(x)), np.column_stack((x, y)), kind='linear', axis=0)
@@ -211,15 +211,17 @@ def cutter3(xc, yc, xg, yg, ang_c,m):
         poligonos.append(shp.Polygon(lista))
 
     print('union poligonos')
-    result_union = unary_union(poligonos)
-
-    print('fin union')
-    # Coordenadas interiores
-    interiores = [interior.xy for interior in result_union.interiors]
-
-    xinterior, yinterior = interiores[0]  # Tomamos la primera isla
-
-    return np.array(xinterior), np.array(yinterior)
+    try:
+        result_union = unary_union(poligonos)
+        print('fin union')
+        # Coordenadas interiores
+        interiores = [interior.xy for interior in result_union.interiors]
+        xinterior, yinterior = interiores[0]  # Tomamos la primera isla
+        return np.array(xinterior), np.array(yinterior)
+    except Exception as ex:
+        print('Error en union')
+        add_logs(f'Error log: {ex}')
+        return None
 
 
 def parametros(xg,yg,r):       
@@ -227,10 +229,14 @@ def parametros(xg,yg,r):
 
     ang_c = perimetros/(r)
 	
-    print('PARAMETROS ang_c')
+    print('PARAMETROS ang_c \n')
+    add_logs('PARAMETROS ang_c \n')
     print(ang_c[0])
+    add_logs(str(ang_c[0]))
     print(ang_c[-1])
+    add_logs(str(ang_c[-1]))
     print(len(ang_c))
+    add_logs(str(len(ang_c)))
     
     
     return ang_c#,long

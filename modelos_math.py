@@ -2,6 +2,8 @@ import numpy as np
 import shapely.geometry as shp 
 from scipy.interpolate import interp1d
 
+from global_functions import add_logs
+
 pi = np.pi
 
 
@@ -62,14 +64,20 @@ def primitivas(theta,f,c,ang):
     perimeter1 = polygon1.length
     perimeter2 = polygon2.length
     
+
+
     return x1,y1,x2,y2,perimeter1,perimeter2,theta[ang]*(180/pi),phi[ang]*(180/pi)
 
+#TODO: Review after modifications
 
-def primitivas_generico(x_,y_,c):
+def primitivas_generico(x_: np.array,y_: np.array,c):
     x = np.array(x_)
     y = np.array(y_)
     r_1 = np.sqrt(x**2 + y**2)  
     r_2 = c - r_1
+
+    #MODIFICATION
+    fc = r_1/r_2
 
     ang_1 = np.arctan2(y, x)
     ang_1[ang_1 < 0] += 2*np.pi
@@ -93,7 +101,7 @@ def primitivas_generico(x_,y_,c):
     x2 = -r_2 * np.cos(ang_2) + c
     y2 = r_2 * np.sin(ang_2)
     
-    return x2,y2,ang_1,ang_2
+    return x2, y2, ang_1, ang_2, fc
     
 
 def angulos(r, s):
@@ -184,26 +192,32 @@ def reorder_points(x, y,nuevos_puntos):
     x_r = np.roll(x[order], -start_index)
     y_r = np.roll(y[order], -start_index)
     print('REORDER POINTS')
-    print(len(y_r))  
+    add_logs('REORDER POINTS')
+    print(len(y_r))
+    add_logs(str(len(y_r)))
     if y_r[0] != 0:
         print('111________')
         x_r = np.concatenate(([x_r[0]], x_r))
         y_r = np.concatenate(([0], y_r))
-        print(len(y_r))  
+        print(len(y_r))
+        add_logs(str(len(y_r)))
    
     if y_r[-1] != 0:
         if len(y_r) > nuevos_puntos:
             print('222________')
             x_r[-1] = x_r[0]
             y_r[-1] = y_r[0]
-            print(len(y_r))  
+            print(len(y_r))
+            add_logs(str(len(y_r)))
         else:
             print('333________')
             x_r = np.concatenate((x_r, [x_r[0]]))
             y_r = np.concatenate((y_r, [y_r[0]]))
-            print(len(y_r))  
+            print(len(y_r))
+            add_logs(str(len(y_r)))
             
         print('concatena el ultimo valor')
+        add_logs('concatena el ultimo valor')
         
     
     return x_r,y_r
@@ -237,6 +251,7 @@ def offset_abierto(x,y,distancia_offset):
 
 def corregir_curvatura(x, y,radio_cut,ajuste_angular):
     print("CORRECCION CURVATURA")
+    add_logs("CORRECCION CURVATURA")
     x,y = generar_offset(x, y,radio_cut)  
     x,y = generar_offset(x, y,-2*radio_cut)
     x,y = generar_offset(x, y,radio_cut)
@@ -245,7 +260,8 @@ def corregir_curvatura(x, y,radio_cut,ajuste_angular):
     
     return x,y
     
-    
+#__________Funcion Modificada
+#TODO: Review this function later.
 def correcciones(m,radio_cutter,paso):
     global r1,r2,thet,phi,c1
 
@@ -280,7 +296,7 @@ def correcciones(m,radio_cutter,paso):
     xg1,yg1 = ajustar_puntos_angular(xg1, yg1, paso)
 
 
-    x2,y2,ang1,ang2 = primitivas_generico(x1,y1,c1)
+    x2,y2,ang1,ang2,f_correg = primitivas_generico(x1,y1,c1)
 
 
     coordinates1 = list(zip(x1, y1))
@@ -291,4 +307,4 @@ def correcciones(m,radio_cutter,paso):
     perimeter2 = polygon2.length
 
     
-    return x1,y1,x2,y2,xg1,yg1,xR1,yR1,m,radio_cut2,zc,z,perimeter1,perimeter2,ang1,ang2
+    return x1,y1,x2,y2,xg1,yg1,xR1,yR1,m,radio_cut2,zc,z,perimeter1,perimeter2,ang1,ang2, f_correg

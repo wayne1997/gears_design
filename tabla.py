@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import ttk
 
 def crear_tabla(pestana_curva):
+    
+    # TODO: Pensar en como validar esta funcion sin cambiar el codigo
     def agregar_fila(i):
         nueva_fila = [""] * len(matriz[0])
         matriz.insert(i + 1, nueva_fila)

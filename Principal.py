@@ -1,5 +1,10 @@
 import tkinter as tk
 from tkinter import ttk
+
+from pandas import DataFrame
+from global_functions import add_logs
+import global_values
+import global_widgets
 from graficas import grafica_w, curv_prim_anim,dientes_anim
 from interfaz import crear_ventana, crear_pestanas
 from tabla import crear_tabla
@@ -9,6 +14,7 @@ import matplotlib.pyplot as plt
 
 x_intp = [0]
 y_intp = [0]
+
 
 
 #_________________FUNCIONES______________________________________________________
@@ -21,10 +27,17 @@ def cerrar_aplicacion():
 
 # Función para graficar la curva interpolada w2/w1
 def imprimir_datos():
+
     plt.close('all')
     
     global x_intp, y_intp
+
+#_________________GRAFICAR CURVA INTERPOLADA____________________________________    
+    #TODO: Modificar esta función para que trabaje con datos ingresados por teclado y con los datos del archivo CSV
     
+    add_logs("Graficando curva interpolada w2/w1...\n")
+
+
     # Frame para colocar la grafica w2/w1
     graf_frame = ttk.LabelFrame(pestana_curva, text="Grafica θ vs ω2/ω1")
     graf_frame.grid(row=0, column=1, rowspan=3, padx=10, pady=10, sticky="nsew")
@@ -33,13 +46,24 @@ def imprimir_datos():
     rel_frame = ttk.LabelFrame(pestana_curva, text="Relación de transmisión TOTAL")
     rel_frame.grid(row=3, column=1, rowspan=1, padx=10, pady=5, sticky="nsew")
     
-      
-    # Grafica relación de transmision
-    x, y = obtener_datos()
-    x_intp, y_intp, rel = grafica_w(graf_frame,x,y)
+
+    if global_values.global_dataframe is not None:
+        #TODO: Agregar la validacion de errores.
+        print("Dataframe global: ", global_values.global_dataframe)
+        data_csv = global_values.global_dataframe
+        x = data_csv["theta"].values
+        y = data_csv["w2/w1"].values
+        x_intp, y_intp, rel = grafica_w(graf_frame,x,y)
+    else:
+        x, y = obtener_datos()
+        x_intp, y_intp, rel = grafica_w(graf_frame,x,y)
+        global_values.global_dataframe = None
     
+    # Label tap one
     tk.Label(rel_frame, text=f"media(ω2/ω1) = {rel}").grid(row=0, column=0)
-    
+#_________________________________________________________________________________________________________________
+
+
     # Graficar las curvas primitivas
     graf_frame2 = ttk.LabelFrame(pestana_parametros, text="Grafica curvas primitivas")
     graf_frame2.grid(row=0, column=2, rowspan=3, padx=10, pady=10, sticky="nsew")
@@ -70,18 +94,9 @@ def imprimir_datos():
     
      
     dientes_anim(cutter_frame,datos_frame2,datos_frame3,dientesgraf_frame,export_frame,pestanas)
-      
-    
-    
 
-    
 
-    
-    
-    
-    
-    
-    
+
 
 #_________________CONFIGURACIONES________________________________________________
 #________________________________________________________________________________
@@ -91,6 +106,22 @@ pestanas = crear_pestanas(ventana)
 
 # Configurar función de cierre
 ventana.protocol("WM_DELETE_WINDOW", cerrar_aplicacion)
+
+#________________________________FRAME DE ERRORES______________________________________
+#_______________________________________________________________________________________
+
+frame_inferior = tk.Frame(ventana, width=200, height=300)
+frame_inferior.pack(fill="both", expand=True, pady=10)
+
+if "textarea" not in global_widgets.widgets:
+    text_area = tk.Text(frame_inferior, wrap="word", fg="white", height=15, width=200, font=("Arial", 12))
+    # Crear una Scrollbar y vincularla al TextArea
+    scrollbar = ttk.Scrollbar(frame_inferior, command=text_area.yview)
+    scrollbar.pack(side="right", fill="y")
+    text_area.pack();
+    # Configurar la scrollbar para que funcione con el TextArea
+    global_widgets.widgets["textarea"] = text_area
+    text_area.config(yscrollcommand=scrollbar.set)
 
 
 #_________________CREAR PESTAÑAS_________________________________________________
@@ -112,6 +143,11 @@ pestana_dientes2 = crear_pestanas(ventana)
 pestanas.add(pestana_dientes2, text="Dientes")
 
 
+# # Tab 5: Comparation
+# tab_comparation = crear_pestanas(ventana)
+# pestanas.add(tab_comparation, text="Análisis")
+
+
 # ________________Contenido: Relacion de velocidades_____________________________
 #________________________________________________________________________________
 
@@ -121,6 +157,7 @@ recuadro_frame = ttk.LabelFrame(pestana_curva, text="Opciones")
 recuadro_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
 # Frame para la tabla
 tabla_frame = ttk.LabelFrame(pestana_curva, text="Tabla")
+
 tabla_frame.grid(row=1, column=0, rowspan=2,padx=10, pady=0, sticky="nsew")
 tabla_frame.grid_rowconfigure(0, weight=1)
 
@@ -128,9 +165,10 @@ tabla_frame.grid_rowconfigure(0, weight=1)
 recuadro = recuadro1(recuadro_frame)
 recuadro.grid(row=0,rowspan=1, column=0, padx=10, pady=10)
 
+#Creates ui's table
 obtener_datos = crear_tabla(tabla_frame)
 
-boton_graficar = ttk.Button(pestana_curva, text="Graficar", command=imprimir_datos)
+boton_graficar = ttk.Button(pestana_curva, text="Graficar",command=imprimir_datos)
 boton_graficar.grid(row=3, column=0, pady=10)
 
 # __________________Contenido: Curvas Primitivas_________________________________

@@ -1,12 +1,17 @@
+from matplotlib.axes import Axes
+from file_handler import FileHandler
+from global_functions import add_logs
+import global_values
 from modelos_math import primitivas ,correcciones,primitivas_generico
 import tkinter as tk
-from tkinter import ttk
+from tkinter import Frame, StringVar, ttk
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from scipy.interpolate import pchip
 import numpy as np 
 from rack import cutter,ajustar_puntos,parametros,rotate,cutter3,cortar_puntas_dientes,redondear_puntas_dientes
 from exportacion import exportarDXF
+import pandas as pd
 
 pi = np.pi
 slider_long =  2000
@@ -18,21 +23,64 @@ def destruir_frame(frame):
         widget.destroy()
 
 
+#TODO: Refactoring on this function
+def grafica_w(pestana_grafica: Frame, x: np.array, y: np.array):
+    
+    cs_limit_sup = 0.500
+    cs_limit_inf = -0.500
 
-def grafica_w(pestana_grafica, x, y):
+    #TODO: Don't know how this works
+    if len(x) == 0 or len(y) == 0:
+        add_logs("No hay datos para graficar")
+        return [], [], 0
+    
     interp = pchip(x, y)
     rel_trans = sum(y)/len(y)
     
     puntos = 20000
     
+    #This point is in charge to create the graph
     x_interp = np.linspace(0, 360, puntos)
+
+    #TODO: El slicer modifica este valor en el rango 
+
     y_interp = interp(x_interp) 
     
     rel_trans = sum(y_interp)/len(y_interp)
     
     rel = np.ones(puntos)*rel_trans
     fig1, axe = plt.subplots()
-    axe.scatter(x, y, color='blue')
+    
+    refresh_graphic_w(axe, x, y, x_interp, y_interp, rel)
+    
+
+    # Muestra la grafica en el Frame de tkinter
+    canvas = FigureCanvasTkAgg(fig1, master=pestana_grafica)
+    canvas_widget = canvas.get_tk_widget()
+    canvas_widget.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+
+    #Implementation sliders
+    def show_values(value):
+        global_values.cs_value_one = float(value)
+        refresh_graphic_w(axe, x, y, x_interp, y_interp.astype(np.float64) + float(value), rel)
+        canvas.draw()
+        add_logs(f"Valor del slider: {value}\n")
+
+    #Sliders
+    change_slider = ttk.Scale(pestana_grafica, from_=cs_limit_inf, to=cs_limit_sup, orient="vertical", length=620,command=show_values)
+    change_slider.grid(row=0, column=1, padx=15, pady=10, sticky="nsew")
+
+    # precision_slider = ttk.Scale(pestana_grafica, from_=0, to=360, orient="vertical", length=620)
+    # precision_slider.grid(row=0, column=2, padx=15, pady=10, sticky="nsew")
+
+    return x_interp, y_interp.astype(np.float64) + global_values.cs_value_one, rel_trans
+
+
+def refresh_graphic_w(axe: Axes, x: np.array, y: np.array, x_interp: np.array, y_interp: np.array, rel: np.array):
+    #Se encarga de graficarlo
+    add_logs(f"Actualizando gráfica...\n {y_interp}")
+    axe.clear()
+    axe.scatter(x, y, color='red')
     axe.plot(x_interp, y_interp)
     axe.plot(x_interp, rel, label='media(ω2/ω1)')
     axe.set_xlabel('θ')
@@ -43,17 +91,10 @@ def grafica_w(pestana_grafica, x, y):
     plt.grid(True)
     axe.legend(bbox_to_anchor=(0, 1), loc='upper left')
 
-    canvas = FigureCanvasTkAgg(fig1, master=pestana_grafica)
-    canvas_widget = canvas.get_tk_widget()
-    canvas_widget.pack(fill=tk.BOTH, expand=True)
-   
-    return x_interp, y_interp, rel_trans
-
 
 def curv_prim_anim(frame1, frame2, x, y):
 
-    def actualizar_anim(ax, canvas, celda_texto, rotation_slider, x, y):
-            
+    def actualizar_anim(ax, canvas, celda_texto, rotation_slider, x, y):            
         global c
         f = np.array(y)
         theta = np.array(x)
@@ -78,6 +119,8 @@ def curv_prim_anim(frame1, frame2, x, y):
         des_r1.grid(row=0, column=0, padx=5, pady=5)
         des_r2 = ttk.Label(des_frame, text=f"Φ: {ph:.4f} °", justify="left")
         des_r2.grid(row=1, column=0, padx=5, pady=5)
+
+        add_logs("Actualizando curvas primitivas...\n")
 
         if c > 0:
             ax.clear()
@@ -123,8 +166,17 @@ def curv_prim_anim(frame1, frame2, x, y):
     etiqueta = ttk.Label(celdas_frame, text="c [mm]:")
     etiqueta.grid(row=0, column=0, padx=5, pady=5)
 
+    def validar_texto(*args):
+        texto = celda_texto.get()
+        if texto == '':
+            return
+        if not texto.isdigit():
+            add_logs(f"Solo se permiten números enteros positivos. '{texto}' no es permitido.")
+            celda_texto.set(texto[:-1])
+
     celda_texto = tk.StringVar()
-    celda = ttk.Entry(celdas_frame, textvariable=celda_texto, validate='key')
+    celda_texto.trace_add('write', validar_texto)
+    celda = ttk.Entry(celdas_frame, textvariable=celda_texto)
     celda.grid(row=0, column=1, padx=5, pady=5)
 
     slider_frame = ttk.LabelFrame(contenido, text="Rotar curvas")
@@ -138,6 +190,9 @@ def curv_prim_anim(frame1, frame2, x, y):
     celda_texto.trace_add('write', lambda *args: actualizar_anim(ax, canvas, celda_texto, rotation_slider, x, y))
     actualizar_anim(ax, canvas, celda_texto, rotation_slider, x, y)
     
+
+
+
 
 def dientes_anim(frame1, frame2, frame3,frame4,frame5,notebook):
     global axx
@@ -183,7 +238,8 @@ def dientes_anim(frame1, frame2, frame3,frame4,frame5,notebook):
             m = float(celda_m.get())
             cut = float(celda_c.get())
 
-            x1,y1,x2,y2,xg1,yg1,xR1,yR1,mod,rcut,zc,z,perim1,perim2,ang1,ang2 = correcciones(m,cut,slider_long)
+            #TODO: Review the variable f_correg - Requisito
+            x1,y1,x2,y2,xg1,yg1,xR1,yR1,mod,rcut,zc,z,perim1,perim2,ang1,ang2,f_correg = correcciones(m,cut,slider_long)
             
             xc,yc = cutter(mod, a, rcut, zc, 1000)         
             xc,yc = ajustar_puntos(xc, yc, 10000)
@@ -212,7 +268,14 @@ def dientes_anim(frame1, frame2, frame3,frame4,frame5,notebook):
         des_r1 = ttk.Label(num_frame, text=f"Z: {z:.4f}", justify="left")
         des_r1.grid(row=0, column=0, padx=5, pady=5)
         
-        
+        #Export to CSV
+        ang_theta = ang1 * (180/np.pi)
+
+        #Button to export csv
+        file_handler = FileHandler()
+
+        exp_csv_btn = ttk.Button(cor_frame, text="Función w2/w1 corregida CSV", command= lambda: file_handler.process_export_csv(pd.DataFrame({"Theta": ang_theta,"f_correg": f_correg})))
+        exp_csv_btn.grid(row=2, column=0, padx=5, pady=10, columnspan=2, sticky="ew")
 
         if a > 0 and m > 0 and cut > 0:
             angg = np.int_(rot_slider.get())
@@ -351,12 +414,19 @@ def dientes_anim(frame1, frame2, frame3,frame4,frame5,notebook):
         angulot = ang2 + ang1
         
         print('ANGULOS')
-        print(angulot[0])         
+        add_logs('ANGULOS')
+        print(angulot[0])
+        add_logs(str(angulot[0]))       
         print(angulot[250])
+        add_logs(str(angulot[250]))
         print(angulot[500])
+        add_logs(str(angulot[500]))
         print(angulot[750])
+        add_logs(str(angulot[750]))
         print(angulot[-1])
+        add_logs(str(angulot[-1]))
         print(len(angulot))
+        add_logs(str(len(angulot)))
 
         
         xe2, ye2 = cutter3(xe1, ye1, xp, yp, -angulot,mod)  
@@ -380,6 +450,7 @@ def dientes_anim(frame1, frame2, frame3,frame4,frame5,notebook):
         etiqueta_puntas.grid(row=0, column=0, padx=5, pady=5)
 
         celda_puntas = tk.StringVar()
+        
         celdapuntascorte = ttk.Entry(corte_dientes_frame, textvariable=celda_puntas, validate='key')
         celdapuntascorte.grid(row=0, column=1, padx=5, pady=5)
         
@@ -394,7 +465,6 @@ def dientes_anim(frame1, frame2, frame3,frame4,frame5,notebook):
         celdapuntasredondeo.grid(row=1, column=1, padx=5, pady=5)
         
         celda_redondeo.trace_add('write', actualizar_celda_redondeo)
-        
         
         
         # Crear botón para exportar el DXF
@@ -439,6 +509,8 @@ def dientes_anim(frame1, frame2, frame3,frame4,frame5,notebook):
     ang_frame = ttk.LabelFrame(datos, text="Águlo de presión del cutter")
     ang_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
 
+#__________________ Frame realted to export csv file
+
     # Frame resultados corregidos
     cor_frame = ttk.LabelFrame(datos, text="Correciones")
     cor_frame.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
@@ -451,6 +523,16 @@ def dientes_anim(frame1, frame2, frame3,frame4,frame5,notebook):
     perimetros_frame = ttk.LabelFrame(cor_frame, text="Perímetros")
     perimetros_frame.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
 
+    #Button action
+    def export_primitives_csv(*args):
+        add_logs("Exportando primitivas a formato csv")
+
+    #Export button
+    exp_to_csv_btn = ttk.Button(cor_frame, text="Exportar w2/w1 corregida CSV", command=export_primitives_csv)
+    exp_to_csv_btn.grid(row=2, column=0, padx=10, pady=10, sticky="nsew")
+
+#______________
+
     # Frame num dientes
     num_frame = ttk.LabelFrame(datos, text="Dientes ruedas no circulares")
     num_frame.grid(row=3, column=0, padx=10, pady=10, sticky="nsew")
@@ -459,7 +541,16 @@ def dientes_anim(frame1, frame2, frame3,frame4,frame5,notebook):
     etiqueta = ttk.Label(celdas_frame, text="módulo :")
     etiqueta.grid(row=0, column=0, padx=5, pady=5)
 
+    def validar_celdam(*args):
+        texto = celda_m.get()
+        if texto == '':
+            return
+        if not texto.isdigit():
+            add_logs(f"Solo se permiten números enteros positivos. '{texto}' no es permitido.")
+            celda_m.set(texto[:-1])
+
     celda_m = tk.StringVar()
+    celda_m.trace_add('write', validar_celdam)
     celda1 = ttk.Entry(celdas_frame, textvariable=celda_m, validate='key')
     celda1.grid(row=0, column=1, padx=5, pady=5)
     
@@ -467,7 +558,16 @@ def dientes_anim(frame1, frame2, frame3,frame4,frame5,notebook):
     etiqueta = ttk.Label(celdas_frame, text="radio [mm]:")
     etiqueta.grid(row=1, column=0, padx=5, pady=5)
 
+    def validar_celdac(*args):
+        texto = celda_c.get()
+        if texto == '':
+            return
+        if not texto.isdigit():
+            add_logs(f"Solo se permiten números enteros positivos. '{texto}' no es permitido.")
+            celda_c.set(texto[:-1])
+
     celda_c = tk.StringVar()
+    celda_c.trace_add('write', validar_celdac)
     celda3 = ttk.Entry(celdas_frame, textvariable=celda_c, validate='key')
     celda3.grid(row=1, column=1, padx=5, pady=5)
      
@@ -475,7 +575,15 @@ def dientes_anim(frame1, frame2, frame3,frame4,frame5,notebook):
     etiqueta = ttk.Label(ang_frame, text="α [°]:")
     etiqueta.grid(row=2, column=0, padx=5, pady=5)
 
+    def validar_celda_a(*args):
+        texto = celda_a.get()
+        if texto == '':
+            return
+        if not texto.isdigit():
+            add_logs(f"Solo se permiten números enteros positivos. '{texto}' no es permitido.")
+            celda_a.set(texto[:-1])
     celda_a = tk.StringVar()
+    celda_a.trace_add('write', validar_celda_a)
     celda2 = ttk.Entry(ang_frame, textvariable=celda_a, validate='key')
     celda2.grid(row=2, column=1, padx=5, pady=5)
     

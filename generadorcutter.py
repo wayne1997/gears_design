@@ -7,6 +7,7 @@ from rack import cutter,ajustar_puntos
 from modelos_math import generar_offset,perimetro
 
 
+
 def rotate(x_, y_, angle):
     # Matriz de rotación
     rotation_matrix = np.array([[np.cos(angle), -np.sin(angle)],
