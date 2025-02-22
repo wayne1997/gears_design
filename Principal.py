@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
 
+import numpy as np
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from pandas import DataFrame
 from global_functions import add_logs
 import global_values
@@ -114,7 +116,7 @@ frame_inferior = tk.Frame(ventana, width=200, height=300)
 frame_inferior.pack(fill="both", expand=True, pady=10)
 
 if "textarea" not in global_widgets.widgets:
-    text_area = tk.Text(frame_inferior, wrap="word", fg="white", height=15, width=200, font=("Arial", 12))
+    text_area = tk.Text(frame_inferior, wrap="word", fg="white", height=35, width=200, font=("Arial", 12))
     # Crear una Scrollbar y vincularla al TextArea
     scrollbar = ttk.Scrollbar(frame_inferior, command=text_area.yview)
     scrollbar.pack(side="right", fill="y")
@@ -143,9 +145,9 @@ pestana_dientes2 = crear_pestanas(ventana)
 pestanas.add(pestana_dientes2, text="Dientes")
 
 
-# # Tab 5: Comparation
-# tab_comparation = crear_pestanas(ventana)
-# pestanas.add(tab_comparation, text="Análisis")
+# Tab 5: Analisis
+tab_analysis = crear_pestanas(ventana)
+pestanas.add(tab_analysis, text="Análisis")
 
 
 # ________________Contenido: Relacion de velocidades_____________________________
@@ -183,7 +185,12 @@ boton_graficar.grid(row=3, column=0, pady=10)
 #________________________________________________________________________________
 
 
+# __________________________Contenido: Analisis___________________________________
+#________________________________________________________________________________
 
+# Frame para el recuadro de opciones
+analysis_tab = ttk.LabelFrame(tab_analysis, text="Opciones")
+analysis_tab.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
 
 
 

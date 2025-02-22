@@ -13,3 +13,6 @@ def validar_texto(configuration, *args):
         if not texto.isdigit():
             add_logs(f"Solo se permiten números enteros positivos. '{texto}' no es permitido.")
             configuration.set(texto[:-1])
+
+def generate_graph():
+     pass

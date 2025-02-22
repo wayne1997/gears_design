@@ -96,15 +96,33 @@ def geom(m, alpha, radio_cutter, z):
     return xc, yc, xrack, yrack
 
 
+#TODO: REVIEW THE COREALATION BETWEEN THIS FUNCITONS
 def intersecar(xcurva,ycurva,xrack,yrack):
+    print(f"x: {xcurva}, y: {ycurva}, XR:{xrack}, YR:{yrack}")
     curva = shp.Polygon(np.column_stack((xcurva, ycurva)))
     cutter = shp.Polygon(np.column_stack((xrack, yrack)))
-
     # Encontrar la geometría resultante después de la intersección
     resultado_interseccion = curva.difference(cutter)
-    x, y = np.array(resultado_interseccion.exterior.xy)
-    return x,y
-
+    if resultado_interseccion.is_empty:
+        add_logs("La intersección es vacía")
+        return [], []
+    elif resultado_interseccion.geom_type == 'Polygon':
+        X, y = np.array(resultado_interseccion.exterior.xy)
+        return X, y
+    elif resultado_interseccion.geom_type == 'MultiPolygon':
+        add_logs("El resultado es un MultiPolygon")
+        first_polygon = list(resultado_interseccion.geoms)[0]
+        X, y = np.array(first_polygon.exterior.xy)
+    elif resultado_interseccion.geom_type == 'GeometryCollection':
+        for geom in resultado_interseccion.geoms:
+            if geom.geom_type == "Polygon":
+                x, y = np.array(geom.exterior.xy)
+                return x, y
+        add_logs("La GeometryCollection no tiene polígonos válidos")
+        return [], []
+    else:
+        add_logs("No se ha podido extraer los datos de la interseccion")
+        return [], []
 
 def rotate(x_, y_, angle):
     # Matriz de rotación

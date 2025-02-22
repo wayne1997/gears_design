@@ -2,6 +2,7 @@ from matplotlib.axes import Axes
 from file_handler import FileHandler
 from global_functions import add_logs
 import global_values
+from global_values import correg_data_global
 from modelos_math import primitivas ,correcciones,primitivas_generico
 import tkinter as tk
 from tkinter import Frame, StringVar, ttk
@@ -225,6 +226,7 @@ def dientes_anim(frame1, frame2, frame3,frame4,frame5,notebook):
         canvas.draw()
     
     def actualizar_a(canvas,canvas_dientes, celda_m, celda_a, celda_c,rot_slider,ax_dientes):
+        add_logs("Ejecutando funcion para generar cutter")
         global xc,yc,xg1,yg1,x1,y1,xR1,yR1,axx,angg,giro1,zc,x2,y2,ang1,ang2,mod
 
         if celda_c.get()=='' or celda_m.get()=='' or celda_a.get()=='' or c == 0:
@@ -273,8 +275,9 @@ def dientes_anim(frame1, frame2, frame3,frame4,frame5,notebook):
 
         #Button to export csv
         file_handler = FileHandler()
-
-        exp_csv_btn = ttk.Button(cor_frame, text="Función w2/w1 corregida CSV", command= lambda: file_handler.process_export_csv(pd.DataFrame({"Theta": ang_theta,"f_correg": f_correg})))
+        correg_data = pd.DataFrame({"Theta": ang_theta,"f_correg": f_correg})
+        global_values.correg_data_global = correg_data
+        exp_csv_btn = ttk.Button(cor_frame, text="Función w2/w1 corregida CSV", command= lambda: file_handler.process_export_csv(correg_data))
         exp_csv_btn.grid(row=2, column=0, padx=5, pady=10, columnspan=2, sticky="ew")
 
         if a > 0 and m > 0 and cut > 0:
