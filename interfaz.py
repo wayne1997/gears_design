@@ -22,9 +22,6 @@ def crear_pestanas(ventana):
     return pestanas
 
 def isUsable():
-    base_date = datetime(2025, 2, 25)
-    today = datetime.today()
-    if today > base_date:
-        return True
-    else:
-        return False
+    base_date = datetime(2025, 2, 25).date()
+    today = datetime.today().date()
+    return today > base_date

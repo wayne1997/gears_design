@@ -64,13 +64,18 @@ def grafica_w(pestana_grafica: Frame, x: np.array, y: np.array):
 
     #
     def update_range_funct(value):
-        precision = 10 ** precision_slider.get()
-        if not precision > 1 or not  -precision < -1:
-            values_slider.config(from_=-1, to=1)
-            add_logs(f"Precision ajustada desde:{-precision} hasta: {precision}")
-        else:
-            values_slider.config(from_=-precision, to=precision)
-            add_logs(f"Precision ajustada desde:{-precision} hasta: {precision}")
+
+        precision = 10 ** int(precision_slider.get())
+        #range_values = np.linspace(-16, 0, 100)
+        # if not precision > 1 or not  -precision < -1:
+        #     values_slider.config(from_=-1, to=1)
+        #     add_logs(f"Precision ajustada valor real:{-1} hasta: {1}")
+        # else:
+        #     values_slider.config(from_=-precision, to=precision)
+        #     add_logs(f"Precision ajustada desde:{-precision} hasta: {precision}")
+        values_slider.config(from_=-precision, to=precision)
+        add_logs(f"Precision ajustada desde:{-precision} hasta: {precision}")
+
 
 
     #Implementation sliders
@@ -86,7 +91,7 @@ def grafica_w(pestana_grafica: Frame, x: np.array, y: np.array):
     values_slider.grid(row=0, column=1, padx=15, pady=5, sticky="nsew")
 
     #Precision slider
-    precision_slider = ttk.Scale(pestana_grafica, from_=-16, to=1, orient="vertical", length=520, command=update_range_funct)
+    precision_slider = ttk.Scale(pestana_grafica, from_=-16, to=0, orient="vertical", length=520, command=update_range_funct)
     precision_slider.grid(row=0, column=2, padx=15, pady=5, sticky="nsew")
 
     return x_interp, y_interp.astype(np.float64) + global_values.cs_value_one, rel_trans
