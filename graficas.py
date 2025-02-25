@@ -1,8 +1,7 @@
 from matplotlib.axes import Axes
 from file_handler import FileHandler
-from global_functions import add_logs
+from global_functions import add_logs, text_validation
 import global_values
-from global_values import correg_data_global
 from modelos_math import primitivas ,correcciones,primitivas_generico
 import tkinter as tk
 from tkinter import Frame, StringVar, ttk
@@ -58,32 +57,49 @@ def grafica_w(pestana_grafica: Frame, x: np.array, y: np.array):
     # Muestra la grafica en el Frame de tkinter
     canvas = FigureCanvasTkAgg(fig1, master=pestana_grafica)
     canvas_widget = canvas.get_tk_widget()
-    canvas_widget.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+    canvas_widget.grid(row=0, column=0, padx=5, pady=5, sticky="ew")
+
+    canvas_widget.grid_propagate(False)
+    canvas_widget.config(width=700, height=500)
+
+    #
+    def update_range_funct(value):
+        precision = 10 ** precision_slider.get()
+        if not precision > 1 or not  -precision < -1:
+            values_slider.config(from_=-1, to=1)
+            add_logs(f"Precision ajustada desde:{-precision} hasta: {precision}")
+        else:
+            values_slider.config(from_=-precision, to=precision)
+            add_logs(f"Precision ajustada desde:{-precision} hasta: {precision}")
+
 
     #Implementation sliders
-    def show_values(value):
+    def update_range_values(value):
         global_values.cs_value_one = float(value)
         refresh_graphic_w(axe, x, y, x_interp, y_interp.astype(np.float64) + float(value), rel)
         canvas.draw()
         add_logs(f"Valor del slider: {value}\n")
 
     #Sliders
-    change_slider = ttk.Scale(pestana_grafica, from_=cs_limit_inf, to=cs_limit_sup, orient="vertical", length=620,command=show_values)
-    change_slider.grid(row=0, column=1, padx=15, pady=10, sticky="nsew")
+    #Value Sliders
+    values_slider = ttk.Scale(pestana_grafica, from_=cs_limit_inf, to=cs_limit_sup, orient="vertical", length=520,command=update_range_values)
+    values_slider.grid(row=0, column=1, padx=15, pady=5, sticky="nsew")
 
-    # precision_slider = ttk.Scale(pestana_grafica, from_=0, to=360, orient="vertical", length=620)
-    # precision_slider.grid(row=0, column=2, padx=15, pady=10, sticky="nsew")
+    #Precision slider
+    precision_slider = ttk.Scale(pestana_grafica, from_=-16, to=1, orient="vertical", length=520, command=update_range_funct)
+    precision_slider.grid(row=0, column=2, padx=15, pady=5, sticky="nsew")
 
     return x_interp, y_interp.astype(np.float64) + global_values.cs_value_one, rel_trans
 
 
 def refresh_graphic_w(axe: Axes, x: np.array, y: np.array, x_interp: np.array, y_interp: np.array, rel: np.array):
     #Se encarga de graficarlo
+
     add_logs(f"Actualizando gráfica...\n {y_interp}")
     axe.clear()
     axe.scatter(x, y, color='red')
     axe.plot(x_interp, y_interp)
-    axe.plot(x_interp, rel, label='media(ω2/ω1)')
+    axe.plot(x_interp, rel, label= 'media(ω2/ω1)')
     axe.set_xlabel('θ')
     axe.set_ylabel('ω2/ω1')
     axe.set_title('Función relación de velocidades')
@@ -94,7 +110,7 @@ def refresh_graphic_w(axe: Axes, x: np.array, y: np.array, x_interp: np.array, y
 
 
 def curv_prim_anim(frame1, frame2, x, y):
-
+    add_logs("Me ejecuto a pesar de estar de ser ejecutado en otra pestaña")
     def actualizar_anim(ax, canvas, celda_texto, rotation_slider, x, y):            
         global c
         f = np.array(y)
@@ -146,6 +162,9 @@ def curv_prim_anim(frame1, frame2, x, y):
 
     canvas = FigureCanvasTkAgg(fig, master=frame1)
     canvas_widget = canvas.get_tk_widget()
+    canvas_widget.grid_propagate(False)
+
+    canvas_widget.config(width=700, height=500)
     canvas_widget.pack(fill=tk.BOTH, expand=True)
 
     # Crea una ventana para el contenido
@@ -168,12 +187,11 @@ def curv_prim_anim(frame1, frame2, x, y):
     etiqueta.grid(row=0, column=0, padx=5, pady=5)
 
     def validar_texto(*args):
-        texto = celda_texto.get()
-        if texto == '':
-            return
-        if not texto.isdigit():
-            add_logs(f"Solo se permiten números enteros positivos. '{texto}' no es permitido.")
-            celda_texto.set(texto[:-1])
+        try:
+            converted_number = float(celda_texto.get())
+            return converted_number
+        except ValueError as error:
+            add_logs(f"El número debe ser un entero o un flotante: {error}")
 
     celda_texto = tk.StringVar()
     celda_texto.trace_add('write', validar_texto)
@@ -597,23 +615,21 @@ def dientes_anim(frame1, frame2, frame3,frame4,frame5,notebook):
     
     # Frame para exportar
     export = ttk.LabelFrame(configuracion_pestana_dientes, text="Exportar")
-    export.grid(row=1, column=0, padx=10, pady=10, sticky="nsew")
+    export.grid(row=1, column=0, padx=5, pady=5, sticky="nsew")
     
     # Frame para slider de la pestaña dientes
     slider_dientes = ttk.Frame(frame4)
     slider_dientes.pack(fill=tk.BOTH, expand=True)
     
     slider_frame2 = ttk.LabelFrame(slider_dientes, text="Rotar engranajes")
-    slider_frame2.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
-    
-    
+    slider_frame2.grid(row=0, column=1, padx=5, pady=5, sticky="nsew")
     
     boton_generar_cut = ttk.Button(ang_frame, text="Generar cutter", command=lambda: actualizar_a(canvas,canvas_dientes, celda_m, celda_a, celda_c, rot_slider,ax_dientes))
-    boton_generar_cut.grid(row=2, column=2, pady=10)
+    boton_generar_cut.grid(row=2, column=2, pady=2)
     
     
     slider_frame = ttk.LabelFrame(contenido, text="Rotar cutter")
-    slider_frame.grid(row=0, column=1, padx=10, pady=10, sticky="nsew")
+    slider_frame.grid(row=0, column=1, padx=5, pady=2, sticky="nsew")
 
 
     rot_slider = ttk.Scale(slider_frame, from_=0, to=slider_long, orient="horizontal", length=620, command=lambda val: actualizar_b(canvas,celda_m, celda_a, celda_c,rot_slider))

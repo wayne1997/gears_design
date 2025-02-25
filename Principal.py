@@ -4,6 +4,8 @@ from tkinter import ttk
 import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from pandas import DataFrame
+
+from analysis_tab import show_analisys_tab
 from global_functions import add_logs
 import global_values
 import global_widgets
@@ -38,7 +40,7 @@ def imprimir_datos():
     #TODO: Modificar esta función para que trabaje con datos ingresados por teclado y con los datos del archivo CSV
     
     add_logs("Graficando curva interpolada w2/w1...\n")
-
+    rel = 0
 
     # Frame para colocar la grafica w2/w1
     graf_frame = ttk.LabelFrame(pestana_curva, text="Grafica θ vs ω2/ω1")
@@ -47,7 +49,11 @@ def imprimir_datos():
     #Frame para colocar la relación de transmisión TOTAL
     rel_frame = ttk.LabelFrame(pestana_curva, text="Relación de transmisión TOTAL")
     rel_frame.grid(row=3, column=1, rowspan=1, padx=10, pady=5, sticky="nsew")
-    
+
+
+    # Label tap one
+    mean_label = tk.Label(rel_frame, text=f"media(ω2/ω1) = {rel}")
+    mean_label.grid(row=0, column=0)
 
     if global_values.global_dataframe is not None:
         #TODO: Agregar la validacion de errores.
@@ -58,11 +64,11 @@ def imprimir_datos():
         x_intp, y_intp, rel = grafica_w(graf_frame,x,y)
     else:
         x, y = obtener_datos()
+        global_values.global_dataframe = DataFrame({"theta": x, "w2/w1": y})
         x_intp, y_intp, rel = grafica_w(graf_frame,x,y)
         global_values.global_dataframe = None
-    
-    # Label tap one
-    tk.Label(rel_frame, text=f"media(ω2/ω1) = {rel}").grid(row=0, column=0)
+
+    mean_label.config(text=f"media(ω2/ω1) = {rel}")
 #_________________________________________________________________________________________________________________
 
 
@@ -72,7 +78,7 @@ def imprimir_datos():
    
     datos_frame = ttk.LabelFrame(pestana_parametros, text="Datos")
     datos_frame.grid(row=0, column=1, rowspan=3, padx=10, pady=10, sticky="nsew")
-     
+    add_logs("Me ejecuto a pesar de ser otra pestaña")
     curv_prim_anim(graf_frame2,datos_frame,x_intp,y_intp)
     
     # Graficar cutter y dientes
@@ -112,11 +118,11 @@ ventana.protocol("WM_DELETE_WINDOW", cerrar_aplicacion)
 #________________________________FRAME DE ERRORES______________________________________
 #_______________________________________________________________________________________
 
-frame_inferior = tk.Frame(ventana, width=200, height=300)
+frame_inferior = tk.Frame(ventana, width=200, height=400)
 frame_inferior.pack(fill="both", expand=True, pady=10)
 
 if "textarea" not in global_widgets.widgets:
-    text_area = tk.Text(frame_inferior, wrap="word", fg="white", height=35, width=200, font=("Arial", 12))
+    text_area = tk.Text(frame_inferior, wrap="word", fg="white", height=45, width=200, font=("Arial", 12))
     # Crear una Scrollbar y vincularla al TextArea
     scrollbar = ttk.Scrollbar(frame_inferior, command=text_area.yview)
     scrollbar.pack(side="right", fill="y")
@@ -156,7 +162,7 @@ pestanas.add(tab_analysis, text="Análisis")
 
 # Frame para el recuadro de opciones
 recuadro_frame = ttk.LabelFrame(pestana_curva, text="Opciones")
-recuadro_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+recuadro_frame.grid(row=0, column=0, padx=10, pady=5, sticky="nsew")
 # Frame para la tabla
 tabla_frame = ttk.LabelFrame(pestana_curva, text="Tabla")
 
@@ -165,7 +171,7 @@ tabla_frame.grid_rowconfigure(0, weight=1)
 
 # Colocar el recuadro de opciones dentro del marco
 recuadro = recuadro1(recuadro_frame)
-recuadro.grid(row=0,rowspan=1, column=0, padx=10, pady=10)
+recuadro.grid(row=0,rowspan=1, column=0, padx=10, pady=5)
 
 #Creates ui's table
 obtener_datos = crear_tabla(tabla_frame)
@@ -189,9 +195,13 @@ boton_graficar.grid(row=3, column=0, pady=10)
 #________________________________________________________________________________
 
 # Frame para el recuadro de opciones
-analysis_tab = ttk.LabelFrame(tab_analysis, text="Opciones")
-analysis_tab.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
+analysis_tab_options = ttk.LabelFrame(tab_analysis, text="Opciones", width=400, height=900)
+analysis_tab_options.grid(row=0, column=0, padx=10, pady=10, sticky="nsew")
 
+analysis_tab_graph = ttk.LabelFrame(tab_analysis, text="Gráfico")
+analysis_tab_graph.grid(row=0, column=1, padx=10, pady=10)
+
+show_analisys_tab(panel_left=analysis_tab_options, panel_right=analysis_tab_graph)
 
 
 

@@ -41,7 +41,7 @@ class FileHandler:
                 title="Guardar como"
             );
             if saved_file :
-                data.to_csv(saved_file, sep=";" ,index=False)
+                data.to_csv(saved_file, sep="," ,index=False)
             else:
                 raise Exception("Error al guardar el archivo")
         except Exception as e:

@@ -6,13 +6,13 @@ def add_logs(message: str):
     if 'textarea' in global_widgets.widgets:
         global_widgets.widgets['textarea'].insert('1.0', f" \n {message} \n")
 
-def validar_texto(configuration, *args):
-        texto = configuration.get()
-        if texto == '':
-            return
-        if not texto.isdigit():
-            add_logs(f"Solo se permiten números enteros positivos. '{texto}' no es permitido.")
-            configuration.set(texto[:-1])
+def text_validation(configuration, *args):
+        try:
+            converted_number = float(configuration.get())
+            return converted_number
+        except ValueError as error:
+            add_logs(f"El número debe ser un entero o un flotante {error}")
+
 
 def generate_graph():
      pass
