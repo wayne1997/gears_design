@@ -50,7 +50,6 @@ def imprimir_datos():
     rel_frame = ttk.LabelFrame(pestana_curva, text="Relación de transmisión TOTAL")
     rel_frame.grid(row=3, column=1, rowspan=1, padx=10, pady=5, sticky="nsew")
 
-
     # Label tap one
     mean_label = tk.Label(rel_frame, text=f"media(ω2/ω1) = {rel}")
     mean_label.grid(row=0, column=0)
@@ -70,8 +69,6 @@ def imprimir_datos():
 
     mean_label.config(text=f"media(ω2/ω1) = {rel}")
 #_________________________________________________________________________________________________________________
-
-
     # Graficar las curvas primitivas
     graf_frame2 = ttk.LabelFrame(pestana_parametros, text="Grafica curvas primitivas")
     graf_frame2.grid(row=0, column=2, rowspan=3, padx=10, pady=10, sticky="nsew")
@@ -90,17 +87,14 @@ def imprimir_datos():
     
     datos_frame3 = ttk.LabelFrame(pestana_dientes, text="Grafica cutter")
     datos_frame3.grid(row=6, column=1, rowspan=1, padx=10, pady=10, sticky="nsew")
-    
-    
+
     # Graficar Dientes, Animación, Exportar DXF
-      
     dientesgraf_frame = ttk.LabelFrame(pestana_dientes2, text="Engranajes")
     dientesgraf_frame.grid(row=0, column=2, rowspan=3, padx=10, pady=10, sticky="nsew")
    
     export_frame = ttk.LabelFrame(pestana_dientes2, text="Ajustes finales y exportación")
     export_frame.grid(row=0, column=1, rowspan=3, padx=10, pady=10, sticky="nsew")
-    
-     
+
     dientes_anim(cutter_frame,datos_frame2,datos_frame3,dientesgraf_frame,export_frame,pestanas)
 
 

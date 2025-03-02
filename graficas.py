@@ -18,6 +18,8 @@ slider_long =  2000
 axx = None
 
 
+
+
 def destruir_frame(frame):
     for widget in frame.winfo_children():
         widget.destroy()
@@ -25,8 +27,8 @@ def destruir_frame(frame):
 
 #TODO: Refactoring on this function
 def grafica_w(pestana_grafica: Frame, x: np.array, y: np.array):
-    
     cs_limit_sup = 0.500
+    cs_init_value= 0.0
     cs_limit_inf = -0.500
 
     #TODO: Don't know how this works
@@ -42,7 +44,6 @@ def grafica_w(pestana_grafica: Frame, x: np.array, y: np.array):
     #This point is in charge to create the graph
     x_interp = np.linspace(0, 360, puntos)
 
-    #TODO: El slicer modifica este valor en el rango 
 
     y_interp = interp(x_interp) 
     
@@ -62,49 +63,62 @@ def grafica_w(pestana_grafica: Frame, x: np.array, y: np.array):
     canvas_widget.grid_propagate(False)
     canvas_widget.config(width=700, height=500)
 
-    #
+    #Slicer precision range
     def update_range_funct(value):
-
         precision = 10 ** int(precision_slider.get())
-        #range_values = np.linspace(-16, 0, 100)
-        # if not precision > 1 or not  -precision < -1:
-        #     values_slider.config(from_=-1, to=1)
-        #     add_logs(f"Precision ajustada valor real:{-1} hasta: {1}")
-        # else:
-        #     values_slider.config(from_=-precision, to=precision)
-        #     add_logs(f"Precision ajustada desde:{-precision} hasta: {precision}")
         values_slider.config(from_=-precision, to=precision)
+        #Ajustar los valores de los slicer para modificarlos al valor de la curva en azul x_intercp, y_interp
         add_logs(f"Precision ajustada desde:{-precision} hasta: {precision}")
 
-
-
     #Implementation sliders
+    #TODO: Modificar el resto del slider para que trabaje con los datos finales en las otras pestañas.
     def update_range_values(value):
         global_values.cs_value_one = float(value)
-        refresh_graphic_w(axe, x, y, x_interp, y_interp.astype(np.float64) + float(value), rel)
+        y_interp_updated = y_interp + global_values.cs_value_one
+        rel_trans_updated = sum(y_interp_updated) / len(y_interp_updated)
+        rel_updated = np.ones(puntos) * rel_trans_updated
+        refresh_graphic_w(axe, x, y, x_interp, y_interp_updated, rel_updated)
         canvas.draw()
+
         add_logs(f"Valor del slider: {value}\n")
 
     #Sliders
+    precision_panel = ttk.LabelFrame(pestana_grafica, text="Ajuste de Curva")
+    precision_panel.grid(row=0, column=1, padx=5, pady=5, sticky="ew")
+
     #Value Sliders
-    values_slider = ttk.Scale(pestana_grafica, from_=cs_limit_inf, to=cs_limit_sup, orient="vertical", length=520,command=update_range_values)
+    add_logs(f"Slider de modificación inicializado en {cs_init_value}")
+    values_slider = ttk.Scale(precision_panel, value=cs_init_value, from_=cs_limit_sup, to=cs_limit_inf, orient="vertical", length=520,command=update_range_values)
     values_slider.grid(row=0, column=1, padx=15, pady=5, sticky="nsew")
 
     #Precision slider
-    precision_slider = ttk.Scale(pestana_grafica, from_=-16, to=0, orient="vertical", length=520, command=update_range_funct)
+    precision_slider = ttk.Scale(precision_panel, from_=-16, to=0, orient="vertical", length=520, command=update_range_funct)
     precision_slider.grid(row=0, column=2, padx=15, pady=5, sticky="nsew")
+
+
+    def reset_curve():
+        values_slider.set(0)
+        precision_slider.set(0)
+        cs_limit_inf = -0.500
+        cs_limit_sup = 0.500
+        values_slider.config(from_=cs_limit_inf, to=cs_limit_sup)
+        refresh_graphic_w(axe, x, y, x_interp, y_interp, rel)
+        canvas.draw()
+        add_logs("Reiniciado")
+
+    #Restablecer button
+    reset_btn = ttk.Button(precision_panel, text="Restablecer", command=reset_curve)
+    reset_btn.grid(row=1, column=1, padx=15, pady=5)
 
     return x_interp, y_interp.astype(np.float64) + global_values.cs_value_one, rel_trans
 
 
 def refresh_graphic_w(axe: Axes, x: np.array, y: np.array, x_interp: np.array, y_interp: np.array, rel: np.array):
-    #Se encarga de graficarlo
-
-    add_logs(f"Actualizando gráfica...\n {y_interp}")
+    add_logs(f"Actualizando gráfica: y: {y}")
     axe.clear()
-    axe.scatter(x, y, color='red')
-    axe.plot(x_interp, y_interp)
-    axe.plot(x_interp, rel, label= 'media(ω2/ω1)')
+    axe.scatter(x, y, color='red', label='Curva 1') # datos originales
+    axe.plot(x_interp, y_interp, color='purple', label='Curva 2')
+    axe.plot(x_interp, rel, label= f'media(ω2/ω1) {rel[0]}', color="orange")
     axe.set_xlabel('θ')
     axe.set_ylabel('ω2/ω1')
     axe.set_title('Función relación de velocidades')
